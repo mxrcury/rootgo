@@ -29,7 +29,7 @@ func main() {
 
 	server := api.NewServer(cfg.Http.Port)
 
-	server.Router("/api", &api.Handler{Router: r})
+	server.Router(r)
 
 	r.GET("/users", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		log.Println("GETRT USERS")

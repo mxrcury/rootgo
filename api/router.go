@@ -111,7 +111,11 @@ func (r *Router) add(method, path string, handler func(context.Context, http.Res
 }
 
 func (r *Router) search(method, path string) func(context.Context, http.ResponseWriter, *http.Request) {
-	explodedPath := explodePath(strings.Replace(path, "/api", "", 1))
+	if !strings.HasPrefix(path, r.Node.Path) {
+		return nil
+	}
+
+	explodedPath := explodePath(strings.Replace(path, r.Node.Path, "", 1))
 	node := r.Node
 	for index, path := range explodedPath {
 		isLastElement := index == len(explodedPath)-1
