@@ -1,18 +1,15 @@
 package util
 
 import (
-	"context"
 	"encoding/json"
+	"io"
 	"net/http"
-	"strings"
 
 	"github.com/mxrcury/rootgo/types"
 )
 
-func DecodeBody(ctx context.Context) *json.Decoder {
-	bodyJSON := string(ctx.Value("body").([]byte))
-	bodyReader := strings.NewReader(bodyJSON)
-	return json.NewDecoder(bodyReader)
+func DecodeBody(body io.Reader) *json.Decoder {
+	return json.NewDecoder(body)
 }
 
 func WriteJSON(w http.ResponseWriter, data interface{}, status int) {

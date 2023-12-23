@@ -19,7 +19,7 @@ type Handler struct {
 
 type (
 	Router struct {
-		Node *Node
+		node *Node
 	}
 
 	Node struct {
@@ -40,7 +40,7 @@ type (
 
 func NewRouter(path string) *Router {
 	return &Router{
-		Node: &Node{
+		node: &Node{
 			Path:     path,
 			Handlers: make(map[string]func(*Context, http.ResponseWriter, *http.Request)),
 			Children: make(map[string]*Node),
@@ -90,7 +90,7 @@ func (r *Router) add(method, path string, handler func(*Context, http.ResponseWr
 		return
 	}
 	explodedPath := explodePath(path)
-	node := r.Node
+	node := r.node
 	for index, path := range explodedPath {
 		isLastElement := index == len(explodedPath)-1
 		if node.Children == nil {
@@ -128,12 +128,12 @@ func (r *Router) add(method, path string, handler func(*Context, http.ResponseWr
 
 func (r *Router) search(method, path string) (func(*Context, http.ResponseWriter, *http.Request), *Params) {
 	params := NewParams()
-	if !strings.HasPrefix(path, r.Node.Path) {
+	if !strings.HasPrefix(path, r.node.Path) {
 		return nil, nil
 	}
 
-	explodedPath := explodePath(strings.Replace(path, r.Node.Path, "", 1))
-	node := r.Node
+	explodedPath := explodePath(strings.Replace(path, r.node.Path, "", 1))
+	node := r.node
 	for index, path := range explodedPath {
 		isLastElement := index == len(explodedPath)-1
 		if node.Children[path] != nil && !isLastElement {
@@ -201,6 +201,10 @@ func (r *Router) POST(path string, handler func(ctx *Context, w http.ResponseWri
 
 func (r *Router) PUT(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
 	r.add("PUT", path, handler)
+}
+
+func (r *Router) PATCH(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
+	r.add("PATCH", path, handler)
 }
 
 func (r *Router) DELETE(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
