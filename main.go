@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -31,20 +31,17 @@ func main() {
 
 	server.Router(r)
 
-	r.GET("/users", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		log.Println("GETRT USERS")
+	r.GET("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, fmt.Sprintf("You get user by ID:%s\n", ctx.Params.Get("id")))
 	})
-	r.POST("/users", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		log.Println("POST USERS")
+
+	r.GET("/users/:id/contacts/:email", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, fmt.Sprintf("You get user by ID:%s, contact id: %s\n", ctx.Params.Get("id"), ctx.Params.Get("email")))
 	})
-	r.POST("/users/:id", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		log.Println("POST USERS :ID")
+
+	r.GET("/users/contacts", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "USER CONTACTS: [ANDRE, PEDRO, LUCAS]")
 	})
-	r.GET("/users/:id/contacts", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		log.Println("GET USERS :ID CONTACTS")
-		io.WriteString(w, "contact posted [OK]")
-	})
-	r.POST("/users/:id/contacts", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {})
 
 	log.Printf("Server started on port %s", cfg.Http.Port)
 

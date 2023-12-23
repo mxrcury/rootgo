@@ -3,8 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/mxrcury/rootgo/api"
 )
 
 type Server struct {
@@ -23,7 +21,7 @@ func NewServer(listenAddr string) *Server {
 }
 
 func (s *Server) Router(router *Router) {
-	s.server.Handler = &api.Handler{router}
+	s.server.Handler = &Handler{Router: router}
 }
 
 func (s *Server) Run() error {
