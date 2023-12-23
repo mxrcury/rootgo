@@ -49,7 +49,7 @@ func main() {
 	})
 
 	r.GET("/users/:id/contacts/:email", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, fmt.Sprintf("You get user by ID:%s, contact id: %s\n", ctx.Params.Get("id"), ctx.Params.Get("")))
+		io.WriteString(w, fmt.Sprintf("You get user by ID:%s, contact id: %s\n", ctx.Params.Get("id"), ctx.Params.Get("email")))
 	})
 
 	r.GET("/users/contacts", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
