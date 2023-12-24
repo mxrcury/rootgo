@@ -9,6 +9,7 @@ Simple HTTP router/server for Golang
 
 ### Coming features
 - Connect server utils like `WriteJSON`, `DecodeBody` as methods of the server(or context?)
+- Add support not only body JSON type but some other content types as well
 
 
 ### Usage example

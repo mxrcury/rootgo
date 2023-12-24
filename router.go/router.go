@@ -31,7 +31,7 @@ type (
 	Context struct {
 		Params *Params
 
-		Body *Body
+		Body *json.Decoder
 	}
 
 	Params struct {
@@ -234,9 +234,5 @@ func (p *Params) Get(key string) []string {
 }
 
 func (c *Context) NewBodyDecoder(reader io.ReadCloser) {
-	c.Body = &Body{BodyDecoder: json.NewDecoder(reader)}
-}
-
-func (c *Context) BodyDecoder() *json.Decoder {
-	return c.Body.BodyDecoder
+	c.Body = json.NewDecoder(reader)
 }

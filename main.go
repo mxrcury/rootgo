@@ -33,7 +33,7 @@ func main() {
 
 	r.POST("/users", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
 		user := new(User)
-		err := ctx.BodyDecoder().Decode(user)
+		err := ctx.Body.Decode(user)
 
 		if err != nil {
 			util.WriteError(w, types.Error{Message: "Wrong creation", Status: 400})
