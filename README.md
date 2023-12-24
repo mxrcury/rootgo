@@ -4,13 +4,11 @@ Simple HTTP router/server for Golang
 ### Current features overview
 - Adding `GET`, `POST`, `PUT`, `DELETE` endpoints
 - Routes with params
-- Getting value of params
-- Separate server that the router can be connected to
+- Getting value of params, several params with the same name presented as slice
+- Router can be used both with standard library and our server wrapper
 
 ### Coming features
-- Make router fully separate from server and possible of using without need to use server
-- Add possibility to have values of several routes with similar values
-- Connect server utils like `WriteJSON`, `DecodeBody` as methodss of the server(or context?)
+- Connect server utils like `WriteJSON`, `DecodeBody` as methods of the server(or context?)
 
 
 ### Usage example
@@ -81,5 +79,20 @@ func main() {
 	log.Fatal(server.Run())
 }
 ```
+
+### Usage only router without server wrapper
+
+```golang
+func main(){
+	r := api.NewRouter("/api")
+	r.GET("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
+		ids := ctx.Params.Get("id")
+
+		io.WriteString(w, "Your user's ID is:"+ids[0])
+	})
+
+	log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
+	
+JZ9```
 
 Licensed by MIT

@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 
-	"github.com/mxrcury/rootgo/api"
 	"github.com/mxrcury/rootgo/config"
+	"github.com/mxrcury/rootgo/router.go"
 	"github.com/mxrcury/rootgo/types"
 	"github.com/mxrcury/rootgo/util"
 )
@@ -21,42 +20,62 @@ type User struct {
 }
 
 func main() {
-
-	r := api.NewRouter("/api")
-
 	cfg, err := config.Init()
 	if err != nil {
 		log.Fatalf("error: %s\n", err)
 	}
 
-	server := api.NewServer(cfg.Http.Port)
-
-	server.Router(r)
-
-	r.GET("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, fmt.Sprintf("You get user by ID:%s\n", ctx.Params.Get("id")))
+	r := router.NewRouter("/api")
+	r.GET("/users/:id", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+		ids := ctx.Params.Get("id")
+		io.WriteString(w, "Your user's ID is:"+ids[0])
 	})
 
-	r.POST("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-		body := new(User)
-		err := util.DecodeBody(r.Body).Decode(body)
+	r.POST("/users", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+		user := new(User)
+		err := ctx.BodyDecoder().Decode(user)
+
 		if err != nil {
-			util.WriteError(w, types.Error{Message: "Bad request", Status: 400})
-			return
+			util.WriteError(w, types.Error{Message: "Wrong creation", Status: 400})
 		}
 
-		util.WriteJSON(w, body, 201)
+		log.Println("USER CREATED:", user)
+
+		io.WriteString(w, "user was successfully created")
 	})
 
-	r.GET("/users/:id/contacts/:email", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, fmt.Sprintf("You get user by ID:%s, contact id: %s\n", ctx.Params.Get("id"), ctx.Params.Get("email")))
-	})
+	log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
 
-	r.GET("/users/contacts", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "USER CONTACTS: [ANDRE, PEDRO, LUCAS]")
-	})
+	/*
 
-	log.Printf("Server started on port %s", cfg.Http.Port)
+		server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
 
-	log.Fatal(server.Run())
+		r.GET("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, fmt.Sprintf("You get user by ID:%s\n", ctx.Params.Get("id")))
+		})
+
+		r.POST("/users/:id", func(c *api.Context, w http.ResponseWriter, r *http.Request) {
+			body := new(User)
+			err := util.DecodeBody(r.Body).Decode(body)
+			if err != nil {
+				util.WriteError(w, types.Error{Message: "Bad request", Status: 400})
+				return
+			}
+
+			util.WriteJSON(w, body, 201)
+		})
+
+		r.GET("/users/:id/contacts/:id", func(c *api.Context, w http.ResponseWriter, r *http.Request) {
+			params := c.Params.Get("id")
+			io.WriteString(w, fmt.Sprintf("You get user by ID:%s, contact id: %s\n", params[0], params[1]))
+		})
+
+		r.GET("/users/contacts", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, "USER CONTACTS: [ANDRE, PEDRO, LUCAS]")
+		})
+
+		log.Printf("Server started on port %s", cfg.Http.Port)
+
+		log.Fatal(server.Run())
+	*/
 }

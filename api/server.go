@@ -11,17 +11,17 @@ type Server struct {
 	server *http.Server
 }
 
-func NewServer(listenAddr string) *Server {
-	listenAddr = fmt.Sprintf(":%s", listenAddr)
+type Options struct {
+	Port string
+}
+
+func NewServer(handler http.Handler, options Options) *Server {
+	listenAddr := fmt.Sprintf(":%s", options.Port)
 
 	return &Server{
 		listenAddr: listenAddr,
-		server:     &http.Server{Addr: listenAddr},
+		server:     &http.Server{Addr: listenAddr, Handler: handler},
 	}
-}
-
-func (s *Server) Router(router *Router) {
-	s.server.Handler = &Handler{Router: router}
 }
 
 func (s *Server) Run() error {
