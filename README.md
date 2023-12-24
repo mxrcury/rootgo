@@ -85,15 +85,28 @@ func main() {
 
 ```golang
 func main(){
-	r := api.NewRouter("/api")
-	r.GET("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-		ids := ctx.Params.Get("id")
+	r := router.NewRouter("/api")
 
+	r.GET("/users/:id", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+		ids := ctx.Params.Get("id")
 		io.WriteString(w, "Your user's ID is:"+ids[0])
+	})
+
+	r.POST("/users", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+		user := new(User)
+		err := ctx.BodyDecoder().Decode(user)
+
+		if err != nil {
+			util.WriteError(w, types.Error{Message: "Wrong creation", Status: 400})
+		}
+
+		log.Println("USER CREATED:", user)
+
+		io.WriteString(w, "user was successfully created")
 	})
 
 	log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
 	
-JZ9```
+```
 
 Licensed by MIT
