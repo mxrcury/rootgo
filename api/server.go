@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/mxrcury/rootgo/router"
@@ -43,9 +44,25 @@ func NewServer(r *router.Handler, options Options) *Server {
 	}
 }
 
+func (c *Context) Write(data interface{}, status int) {
+	switch v := data.(type) {
+	case string:
+		if isValidJSON := json.Valid([]byte(v)); isValidJSON { // change check of every incoming type if it's valid json
+			c.WriteJSON(data, status)
+			return
+		} else {
+			c.Response.WriteHeader(status)
+			c.Response.Header().Add("Content-Type", "text/plain")
+			c.Response.Header().Add("Connection", "close")
+			io.WriteString(c.Response, v)
+		}
+	}
+}
+
 func (c *Context) WriteJSON(data interface{}, status int) {
 	c.Response.WriteHeader(status)
 	c.Response.Header().Add("Content-Type", "application/json")
+	c.Response.Header().Add("Connection", "close")
 	json.NewEncoder(c.Response).Encode(data)
 }
 

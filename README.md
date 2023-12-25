@@ -6,9 +6,9 @@ Simple HTTP router/server for Golang
 - Routes with params
 - Getting value of params, several params with the same name presented as slice
 - Router can be used both with standard library and our server wrapper
+- Server wrapper that implements some high level utils
 
 ### Coming features
-- Connect server utils like `WriteJSON`, `DecodeBody` as methods of the server(or context?)
 - Add support not only body JSON type but some other content types as well
 
 

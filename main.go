@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mxrcury/rootgo/api"
 	"github.com/mxrcury/rootgo/config"
 	"github.com/mxrcury/rootgo/router"
 	"github.com/mxrcury/rootgo/types"
@@ -45,53 +44,5 @@ func main() {
 		io.WriteString(w, "user was successfully created")
 	})
 
-	server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
-
-	server.GET("/users/contacts/:id", func(ctx *api.Context) {
-		ctx.WriteJSON("ok id:"+ctx.Params.Get("id")[0], 200)
-	})
-
-	server.POST("/users/contacts", func(ctx *api.Context) {
-		body := new(User)
-		ctx.Body.Decode(body)
-
-		ctx.WriteJSON("Successfully", 201)
-	})
-
-	server.Run()
-
-	//log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
-
-	/*
-
-		server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
-
-		r.GET("/users/:id", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-			io.WriteString(w, fmt.Sprintf("You get user by ID:%s\n", ctx.Params.Get("id")))
-		})
-
-		r.POST("/users/:id", func(c *api.Context, w http.ResponseWriter, r *http.Request) {
-			body := new(User)
-			err := util.DecodeBody(r.Body).Decode(body)
-			if err != nil {
-				util.WriteError(w, types.Error{Message: "Bad request", Status: 400})
-				return
-			}
-
-			util.WriteJSON(w, body, 201)
-		})
-
-		r.GET("/users/:id/contacts/:id", func(c *api.Context, w http.ResponseWriter, r *http.Request) {
-			params := c.Params.Get("id")
-			io.WriteString(w, fmt.Sprintf("You get user by ID:%s, contact id: %s\n", params[0], params[1]))
-		})
-
-		r.GET("/users/contacts", func(ctx *api.Context, w http.ResponseWriter, r *http.Request) {
-			io.WriteString(w, "USER CONTACTS: [ANDRE, PEDRO, LUCAS]")
-		})
-
-		log.Printf("Server started on port %s", cfg.Http.Port)
-
-		log.Fatal(server.Run())
-	*/
+	log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
 }

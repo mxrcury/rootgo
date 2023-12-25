@@ -10,6 +10,7 @@ import (
 
 type IHandler interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
+
 	GET(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
 	POST(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
 	PATCH(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
