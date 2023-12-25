@@ -2,7 +2,7 @@
 Simple HTTP router/server for Golang
 
 ### Current features overview
-- Adding `GET`, `POST`, `PUT`, `DELETE` endpoints
+- Adding `GET`, `POST`, `PATCH`, `PUT`, `DELETE` endpoints
 - Routes with params
 - Getting value of params, several params with the same name presented as slice
 - Router can be used both with standard library and our server wrapper
