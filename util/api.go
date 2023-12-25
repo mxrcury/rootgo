@@ -2,15 +2,10 @@ package util
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/mxrcury/rootgo/types"
 )
-
-func DecodeBody(body io.Reader) *json.Decoder {
-	return json.NewDecoder(body)
-}
 
 func WriteJSON(w http.ResponseWriter, data interface{}, status int) {
 	w.WriteHeader(status)

@@ -10,6 +10,11 @@ import (
 
 type IHandler interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
+	GET(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
+	POST(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
+	PATCH(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
+	PUT(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
+	DELETE(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
 }
 
 type Handler struct {
@@ -51,7 +56,8 @@ func NewRouter(path string) *Handler {
 				Handlers: make(map[string]func(*Context, http.ResponseWriter, *http.Request)),
 				Children: make(map[string]*Node),
 			},
-		}}
+		},
+	}
 }
 
 func NewParams() *Params {
@@ -88,7 +94,7 @@ func newContext(params *Params) *Context {
 }
 */
 
-func (r *Router) add(method, path string, handler func(*Context, http.ResponseWriter, *http.Request)) {
+func (r *Router) Add(method, path string, handler func(*Context, http.ResponseWriter, *http.Request)) {
 	type methods []string
 
 	allowedMethods := methods{http.MethodGet, http.MethodDelete, http.MethodPost, http.MethodHead, http.MethodPut}
@@ -198,24 +204,25 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "404 not found page")
 	}
 }
+
 func (h *Handler) GET(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
-	h.Router.add("GET", path, handler)
+	h.Router.Add("GET", path, handler)
 }
 
 func (h *Handler) POST(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
-	h.Router.add("POST", path, handler)
+	h.Router.Add("POST", path, handler)
 }
 
 func (h *Handler) PUT(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
-	h.Router.add("PUT", path, handler)
+	h.Router.Add("PUT", path, handler)
 }
 
 func (h *Handler) PATCH(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
-	h.Router.add("PATCH", path, handler)
+	h.Router.Add("PATCH", path, handler)
 }
 
 func (h *Handler) DELETE(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
-	h.Router.add("DELETE", path, handler)
+	h.Router.Add("DELETE", path, handler)
 }
 
 func (p *Params) Set(key, value string) {

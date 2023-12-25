@@ -13,6 +13,31 @@ Simple HTTP router/server for Golang
 
 
 ### Usage example
+
+```go
+func main(){
+	r := router.NewRouter("/api")
+
+	server := api.NewServer(r, api.Options{Port: "8000"})
+
+	server.GET("/users/contacts/:id", func(ctx *api.Context) {
+		id := ctx.Params.Get("id")[0]
+		ctx.WriteJSON("GET id:"+id, 200)
+	})
+
+	server.POST("/users/contacts", func(ctx *api.Context) {
+		body := new(User)
+		ctx.Body.Decode(body)
+
+		ctx.WriteJSON("Successfully created", 201)
+	})
+
+	server.Run()
+}
+
+```
+
+<!--
 ```go
 
 func main() {
@@ -80,6 +105,7 @@ func main() {
 	log.Fatal(server.Run())
 }
 ```
+-->
 
 ### Usage only router without server wrapper
 

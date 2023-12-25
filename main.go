@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mxrcury/rootgo/api"
 	"github.com/mxrcury/rootgo/config"
-	"github.com/mxrcury/rootgo/router.go"
+	"github.com/mxrcury/rootgo/router"
 	"github.com/mxrcury/rootgo/types"
 	"github.com/mxrcury/rootgo/util"
 )
@@ -25,7 +26,7 @@ func main() {
 		log.Fatalf("error: %s\n", err)
 	}
 
-	r := router.NewRouter("/api")
+	r := router.NewRouter(_prefix)
 	r.GET("/users/:id", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
 		ids := ctx.Params.Get("id")
 		io.WriteString(w, "Your user's ID is:"+ids[0])
@@ -44,7 +45,22 @@ func main() {
 		io.WriteString(w, "user was successfully created")
 	})
 
-	log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
+	server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
+
+	server.GET("/users/contacts/:id", func(ctx *api.Context) {
+		ctx.WriteJSON("ok id:"+ctx.Params.Get("id")[0], 200)
+	})
+
+	server.POST("/users/contacts", func(ctx *api.Context) {
+		body := new(User)
+		ctx.Body.Decode(body)
+
+		ctx.WriteJSON("Successfully", 201)
+	})
+
+	server.Run()
+
+	//log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
 
 	/*
 
