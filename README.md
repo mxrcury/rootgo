@@ -1,5 +1,5 @@
 # Root
-Simple HTTP router/server for Golang
+Simple and lightweight HTTP router/server for Golang
 
 ### Current features overview
 - Adding `GET`, `POST`, `PATCH`, `PUT`, `DELETE` endpoints
