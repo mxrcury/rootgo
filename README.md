@@ -25,7 +25,14 @@ Simple and lightweight HTTP router/server for Golang
 - Server wrapper that implements some high level utils
 
 ### Coming features
-- Add support not only body JSON type but some other content types as well
+- [Server] Add support not only body JSON type but some other content types as well and add header "Content-length" as response
+- [Serer/Router] Built in logger of requests and response(check if possible?)
+- [Server] Maybe something like middleware
+- [Server] Working with views, like html, css, js etc.
+- [Server] Add logs of all routes that are connected after running application(like in Nest)
+- [Server] Implement caching(in memory and in redis or any other db that implement Cache interface in `/caching/cache.go`) 
+- [Router/Server] Grouping several routes
+- [Server] Add a feature to add customer error handler that catch different errors
 
 
 ### Usage example
@@ -37,8 +44,8 @@ func main(){
 	server := api.NewServer(r, api.Options{Port: "8000"})
 
 	server.GET("/users/contacts/:id", func(ctx *api.Context) {
-		id := ctx.Params.Get("id")[0]
-		ctx.WriteJSON("GET id:"+id, 200)
+		ids := ctx.Params.Get("id")
+		ctx.WriteJSON("GET id:"+id[0], 200)
 	})
 
 	server.POST("/users/contacts", func(ctx *api.Context) {
@@ -141,8 +148,6 @@ func main(){
 		if err != nil {
 			util.WriteError(w, types.Error{Message: "Wrong creation", Status: 400})
 		}
-
-		log.Println("USER CREATED:", user)
 
 		io.WriteString(w, "user was successfully created")
 	})

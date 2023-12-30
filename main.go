@@ -1,14 +1,14 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"log"
-	"net/http"
+	"os"
 
+	"github.com/mxrcury/rootgo/api"
 	"github.com/mxrcury/rootgo/config"
 	"github.com/mxrcury/rootgo/router"
 	"github.com/mxrcury/rootgo/types"
-	"github.com/mxrcury/rootgo/util"
 )
 
 const _prefix = "/api"
@@ -26,23 +26,51 @@ func main() {
 	}
 
 	r := router.NewRouter(_prefix)
-	r.GET("/users/:id", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+
+	server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
+	server.GET("/users/:id", func(ctx *api.Context) {
 		ids := ctx.Params.Get("id")
-		io.WriteString(w, "Your user's ID is:"+ids[0])
+		ctx.Write(fmt.Sprintf("<h1>Your user's ID is [%s]</h1><p>You IP is %s</p><b>Magic text: %s</b>\n", ids[0], ctx.Request.RemoteAddr, ctx.Request.URL.Query().Get("msg")), 200)
 	})
 
-	r.POST("/users", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+	server.POST("/users", func(ctx *api.Context) {
 		user := new(User)
 		err := ctx.Body.Decode(user)
 
 		if err != nil {
-			util.WriteError(w, types.Error{Message: "Wrong creation", Status: 400})
+			ctx.WriteError(types.Error{Message: "You entered wrong values", Status: 400})
 		}
 
-		log.Println("USER CREATED:", user)
-
-		io.WriteString(w, "user was successfully created")
+		if err := ctx.Write(user, 200); err != nil {
+			ctx.WriteError(types.Error{Message: "Internal server error", Status: 500})
+		}
 	})
 
-	log.Fatalln(http.ListenAndServe(":"+cfg.Http.Port, r))
+	server.GET("/main", func(ctx *api.Context) {
+		file, err := os.ReadFile("./assets/index.html")
+		if err != nil {
+			ctx.Write("<h1>Internal server error:"+err.Error()+"</h1>", 500)
+		}
+		ctx.Write(string(file), 200)
+	})
+
+	server.GET("/script.js", func(ctx *api.Context) {
+		file, err := os.ReadFile("./assets/script.js")
+		if err != nil {
+			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
+		}
+
+		ctx.WriteFile(file, api.JSType)
+	})
+
+	server.GET("/script.js", func(ctx *api.Context) {
+		file, err := os.ReadFile("./assets/script.js")
+		if err != nil {
+			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
+		}
+
+		ctx.WriteFile(file, api.JSType)
+	})
+
+	server.Run()
 }

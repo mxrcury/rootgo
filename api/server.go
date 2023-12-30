@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/mxrcury/rootgo/router"
@@ -44,26 +46,69 @@ func NewServer(r *router.Handler, options Options) *Server {
 	}
 }
 
-func (c *Context) Write(data interface{}, status int) {
-	switch v := data.(type) {
+func (c *Context) Write(data interface{}, status int) error {
+	switch d := data.(type) {
 	case string:
-		if isValidJSON := json.Valid([]byte(v)); isValidJSON { // change check of every incoming type if it's valid json
-			c.WriteJSON(data, status)
-			return
-		} else {
-			c.Response.WriteHeader(status)
-			c.Response.Header().Add("Content-Type", "text/plain")
-			c.Response.Header().Add("Connection", "close")
-			io.WriteString(c.Response, v)
-		}
+		c.Response.WriteHeader(status)
+		c.Response.Header().Add("Content-Type", "text/html")
+		c.Response.Header().Add("Connection", "close")
+		_, err := io.WriteString(c.Response, d)
+		return err
+	default:
+		return c.WriteJSON(data, status)
 	}
 }
 
-func (c *Context) WriteJSON(data interface{}, status int) {
+func (c *Context) WriteJSON(data interface{}, status int) error {
 	c.Response.WriteHeader(status)
 	c.Response.Header().Add("Content-Type", "application/json")
 	c.Response.Header().Add("Connection", "close")
-	json.NewEncoder(c.Response).Encode(data)
+	err := json.NewEncoder(c.Response).Encode(data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type FileType int
+
+const (
+	JPEGType = iota + 1
+	PNGType
+	SVGType
+	CSSType
+	JSType
+	TTFType
+	FormDataType
+	PDFType
+)
+
+func (c *Context) WriteFile(content []byte, fileType FileType) {
+
+	file := new([]byte)
+	buff := make([]byte, 512)
+	f := bytes.NewReader(content)
+	for {
+		n, err := f.Read(buff)
+		if err != nil {
+			break
+		}
+		_ = n
+		*file = append(*file, buff[:n]...)
+	}
+	switch fileType {
+	case JPEGType:
+
+		c.Response.Header().Add("Content-Type", "image/jpeg")
+		c.Response.Write(*file)
+	case PNGType:
+		c.Response.Header().Add("Content-Type", "image/png")
+	case JSType:
+		c.Response.Header().Add("Content-Type", "application/javascript")
+		log.Println("JS TYPE")
+	}
+	c.Response.Header().Add("Content-Length", fmt.Sprintf("%d", len(*file)))
+	c.Response.Write(*file)
 }
 
 func (c *Context) WriteError(err types.Error) {
@@ -104,5 +149,7 @@ func (s *Server) DELETE(path string, handler func(*Context)) {
 }
 
 func (s *Server) Run() error {
+	// (?): Maybe log it only when logger is enabled
+	log.Printf("🔨 Server started on port %s\n", s.listenAddr[1:])
 	return http.ListenAndServe(s.listenAddr, s.server.Handler)
 }

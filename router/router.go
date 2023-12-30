@@ -61,7 +61,7 @@ func NewRouter(path string) *Handler {
 	}
 }
 
-func NewParams() *Params {
+func newParams() *Params {
 	return &Params{make(map[string][]string)}
 }
 
@@ -140,7 +140,7 @@ func (r *Router) Add(method, path string, handler func(*Context, http.ResponseWr
 }
 
 func (r *Router) search(method, path string) (func(*Context, http.ResponseWriter, *http.Request), *Params) {
-	params := NewParams()
+	params := newParams()
 	if !strings.HasPrefix(path, r.node.Path) {
 		return nil, nil
 	}
@@ -164,7 +164,7 @@ func (r *Router) search(method, path string) (func(*Context, http.ResponseWriter
 			for _, v := range node.Children {
 				if strings.HasPrefix(v.Path, ":") {
 					node = node.Children[v.Path]
-					params.Set(strings.Replace(v.Path, ":", "", 1), path)
+					params.set(strings.Replace(v.Path, ":", "", 1), path)
 					continue
 				}
 			}
@@ -173,7 +173,7 @@ func (r *Router) search(method, path string) (func(*Context, http.ResponseWriter
 		if node.Children[path] == nil && isLastElement {
 			for _, v := range node.Children {
 				if strings.HasPrefix(v.Path, ":") {
-					params.Set(strings.Replace(v.Path, ":", "", 1), path)
+					params.set(strings.Replace(v.Path, ":", "", 1), path)
 					return node.Children[v.Path].Handlers[method], params
 				}
 			}
@@ -226,7 +226,7 @@ func (h *Handler) DELETE(path string, handler func(ctx *Context, w http.Response
 	h.Router.Add("DELETE", path, handler)
 }
 
-func (p *Params) Set(key, value string) {
+func (p *Params) set(key, value string) {
 	if _, ok := p.Values[key]; ok {
 		p.Values[key] = append(p.Values[key], value)
 	} else {
