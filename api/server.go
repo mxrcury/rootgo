@@ -1,40 +1,47 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/mxrcury/rootgo/router"
 	"github.com/mxrcury/rootgo/types"
+	"github.com/mxrcury/rootgo/util"
 )
 
-type Server struct {
-	listenAddr string
+type (
+	FileType int
 
-	server  *http.Server
-	handler *router.Handler
-}
+	Server struct {
+		listenAddr string
 
-type Context struct {
-	Request  *http.Request
-	Response http.ResponseWriter
+		server  *http.Server
+		handler *router.Handler
+	}
 
-	Params *router.Params
-	Body   json.Decoder
-}
+	Context struct {
+		Request  *http.Request
+		Response http.ResponseWriter
 
-type IContext interface {
-	WriteJSON(interface{}, int)
-	WriteError(types.Error)
-}
+		Params *router.Params
+		Body   json.Decoder
+	}
 
-type Options struct {
-	Port string
-}
+	Options struct {
+		Port string
+	}
+
+	IContext interface {
+		WriteJSON(interface{}, int)
+		WriteError(types.Error)
+		Write(interface{}, int) error
+		WriteFile(int, []byte, FileType) error
+	}
+)
 
 func NewServer(r *router.Handler, options Options) *Server {
 	listenAddr := fmt.Sprintf(":%s", options.Port)
@@ -44,78 +51,6 @@ func NewServer(r *router.Handler, options Options) *Server {
 		server:     &http.Server{Addr: listenAddr, Handler: &router.Handler{Router: r.Router}},
 		handler:    r,
 	}
-}
-
-func (c *Context) Write(data interface{}, status int) error {
-	switch d := data.(type) {
-	case string:
-		c.Response.WriteHeader(status)
-		c.Response.Header().Add("Content-Type", "text/html")
-		c.Response.Header().Add("Connection", "close")
-		_, err := io.WriteString(c.Response, d)
-		return err
-	default:
-		return c.WriteJSON(data, status)
-	}
-}
-
-func (c *Context) WriteJSON(data interface{}, status int) error {
-	c.Response.WriteHeader(status)
-	c.Response.Header().Add("Content-Type", "application/json")
-	c.Response.Header().Add("Connection", "close")
-	err := json.NewEncoder(c.Response).Encode(data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type FileType int
-
-const (
-	JPEGType = iota + 1
-	PNGType
-	SVGType
-	CSSType
-	JSType
-	TTFType
-	FormDataType
-	PDFType
-)
-
-func (c *Context) WriteFile(content []byte, fileType FileType) {
-
-	file := new([]byte)
-	buff := make([]byte, 512)
-	f := bytes.NewReader(content)
-	for {
-		n, err := f.Read(buff)
-		if err != nil {
-			break
-		}
-		_ = n
-		*file = append(*file, buff[:n]...)
-	}
-	switch fileType {
-	case JPEGType:
-
-		c.Response.Header().Add("Content-Type", "image/jpeg")
-		c.Response.Write(*file)
-	case PNGType:
-		c.Response.Header().Add("Content-Type", "image/png")
-	case JSType:
-		c.Response.Header().Add("Content-Type", "application/javascript")
-		log.Println("JS TYPE")
-	}
-	c.Response.Header().Add("Content-Length", fmt.Sprintf("%d", len(*file)))
-	c.Response.Write(*file)
-}
-
-func (c *Context) WriteError(err types.Error) {
-	c.Response.WriteHeader(err.Status)
-	c.Response.Header().Add("Content-Type", "application/json")
-	c.Response.Header().Add("Connection", "close")
-	json.NewEncoder(c.Response).Encode(err)
 }
 
 func (s *Server) GET(path string, handler func(*Context)) {
@@ -152,4 +87,86 @@ func (s *Server) Run() error {
 	// (?): Maybe log it only when logger is enabled
 	log.Printf("🔨 Server started on port %s\n", s.listenAddr[1:])
 	return http.ListenAndServe(s.listenAddr, s.server.Handler)
+}
+
+func (c *Context) Write(data interface{}, status int) error {
+	switch d := data.(type) {
+	case string:
+		c.Response.WriteHeader(status)
+		c.Response.Header().Add("Content-Type", "text/html")
+		c.Response.Header().Add("Connection", "close")
+		_, err := io.WriteString(c.Response, d)
+		return err
+	default:
+		return c.WriteJSON(data, status)
+	}
+}
+
+func (c *Context) WriteJSON(data interface{}, status int) error {
+	c.Response.WriteHeader(status)
+	c.Response.Header().Add("Content-Type", "application/json")
+	c.Response.Header().Add("Connection", "close")
+	err := json.NewEncoder(c.Response).Encode(data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const (
+	JPEGFileType = iota + 1
+	PNGFileType
+	SVGFileType
+	CSSFileType
+	HTMLFileType
+	JSFileType
+	TTFFileType
+	FormDataFileType
+	PDFFileType
+)
+
+func (c *Context) WriteFile(code int, content []byte, fileType FileType) {
+	switch fileType {
+	case JPEGFileType:
+		c.Response.Header().Set("Content-Type", "image/jpeg")
+	case PNGFileType:
+		c.Response.Header().Set("Content-Type", "image/png")
+	case SVGFileType:
+		c.Response.Header().Set("Content-Type", "image/svg+xml")
+	case CSSFileType:
+		c.Response.Header().Set("Content-Type", "text/css")
+	case HTMLFileType:
+		c.Response.Header().Set("Content-Type", "text/html")
+	case JSFileType:
+		c.Response.Header().Set("Content-Type", "application/javascript")
+	case PDFFileType:
+		c.Response.Header().Set("Content-Type", "application/pdf")
+	case TTFFileType:
+		c.Response.Header().Set("Content-Type", "font/ttf")
+	case FormDataFileType:
+		c.Response.Header().Set("Content-Type", "multipart/form-data")
+	}
+
+	hashedContent := util.HashValue(content)
+
+	c.Response.Header().Set("Cache-Control", "max-age=3600")
+
+	cacheExpiration := time.Now().Add(time.Hour * 1)
+	c.Response.Header().Set("Expires", cacheExpiration.UTC().Format(http.TimeFormat))
+
+	lastModified := time.Now().UTC()
+	c.Response.Header().Set("Last-Modified", lastModified.Format(http.TimeFormat))
+
+	c.Response.Header().Set("ETag", hashedContent)
+
+	c.Response.WriteHeader(code)
+
+	c.Response.Write(content)
+}
+
+func (c *Context) WriteError(err types.Error) {
+	c.Response.WriteHeader(err.Status)
+	c.Response.Header().Add("Content-Type", "application/json")
+	c.Response.Header().Add("Connection", "close")
+	json.NewEncoder(c.Response).Encode(err)
 }

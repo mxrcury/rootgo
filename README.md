@@ -25,7 +25,7 @@ Simple and lightweight HTTP router/server for Golang
 - Server wrapper that implements some high level utils
 
 ### Coming features
-- [Server] Add support not only body JSON type but some other content types as well and add header "Content-length" as response
+- [Server] Add support not only body JSON type but some other content types as well and add header "Content-length" as response (needs testing method 'WriteFile' and caching inside of it)
 - [Serer/Router] Built in logger of requests and response(check if possible?)
 - [Server] Maybe something like middleware
 - [Server] Working with views, like html, css, js etc.

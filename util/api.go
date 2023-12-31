@@ -1,21 +1,14 @@
 package util
 
 import (
-	"encoding/json"
-	"net/http"
-
-	"github.com/mxrcury/rootgo/types"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
-func WriteJSON(w http.ResponseWriter, data interface{}, status int) {
-	w.WriteHeader(status)
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
-}
+func HashValue(value []byte) string {
+	h := sha256.New()
 
-func WriteError(w http.ResponseWriter, err types.Error) {
-	w.WriteHeader(err.Status)
-	w.Header().Add("Content-Type", "application/json")
-	w.Header().Add("Connection", "close")
-	json.NewEncoder(w).Encode(err)
+	h.Write(value)
+
+	return hex.EncodeToString(h.Sum(nil))
 }

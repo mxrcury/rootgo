@@ -28,6 +28,7 @@ func main() {
 	r := router.NewRouter(_prefix)
 
 	server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
+	r.Logger()
 	server.GET("/users/:id", func(ctx *api.Context) {
 		ids := ctx.Params.Get("id")
 		ctx.Write(fmt.Sprintf("<h1>Your user's ID is [%s]</h1><p>You IP is %s</p><b>Magic text: %s</b>\n", ids[0], ctx.Request.RemoteAddr, ctx.Request.URL.Query().Get("msg")), 200)
@@ -46,12 +47,22 @@ func main() {
 		}
 	})
 
-	server.GET("/main", func(ctx *api.Context) {
+	server.GET("/file", func(ctx *api.Context) {
 		file, err := os.ReadFile("./assets/index.html")
 		if err != nil {
-			ctx.Write("<h1>Internal server error:"+err.Error()+"</h1>", 500)
+			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
 		}
-		ctx.Write(string(file), 200)
+
+		ctx.WriteFile(200, file, api.HTMLFileType)
+	})
+
+	server.GET("/file2", func(ctx *api.Context) {
+		file, err := os.ReadFile("./assets/script.js")
+		if err != nil {
+			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
+		}
+
+		ctx.WriteFile(200, file, api.JSFileType)
 	})
 
 	server.GET("/script.js", func(ctx *api.Context) {
@@ -60,16 +71,7 @@ func main() {
 			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
 		}
 
-		ctx.WriteFile(file, api.JSType)
-	})
-
-	server.GET("/script.js", func(ctx *api.Context) {
-		file, err := os.ReadFile("./assets/script.js")
-		if err != nil {
-			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
-		}
-
-		ctx.WriteFile(file, api.JSType)
+		ctx.WriteFile(200, file, api.JSFileType)
 	})
 
 	server.Run()

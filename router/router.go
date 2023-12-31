@@ -3,7 +3,9 @@ package router
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 )
@@ -20,6 +22,8 @@ type IHandler interface {
 
 type Handler struct {
 	Router *Router
+
+	logger *log.Logger
 }
 
 type (
@@ -197,6 +201,11 @@ func explodePath(path string) []string {
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler, params := h.Router.search(r.Method, r.URL.Path)
+
+	if h.logger != nil {
+		h.logger.Printf("[%s] %s\n", r.Method, r.URL.Path)
+	}
+
 	if handler != nil {
 		ctx := newContext(params)
 		ctx.NewBodyDecoder(r.Body)
@@ -224,6 +233,10 @@ func (h *Handler) PATCH(path string, handler func(ctx *Context, w http.ResponseW
 
 func (h *Handler) DELETE(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
 	h.Router.Add("DELETE", path, handler)
+}
+
+func (h *Handler) Logger() {
+	h.logger = log.New(os.Stdout, "test", log.Flags())
 }
 
 func (p *Params) set(key, value string) {
