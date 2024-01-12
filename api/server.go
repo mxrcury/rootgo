@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -21,6 +20,9 @@ type (
 
 		server  *http.Server
 		handler *router.Handler
+
+		middlewares []Middleware
+		assetsPath  string
 	}
 
 	Context struct {
@@ -34,6 +36,8 @@ type (
 	Options struct {
 		Port string
 	}
+
+	Middleware func(http.ResponseWriter, *http.Request)
 
 	IContext interface {
 		WriteJSON(interface{}, int)
@@ -83,9 +87,23 @@ func (s *Server) DELETE(path string, handler func(*Context)) {
 	})
 }
 
+func (s *Server) USE(middleware func(http.ResponseWriter, *http.Request)) {
+	s.middlewares = append(s.middlewares, middleware)
+	// Make it working for specific routes
+}
+
+func (s *Server) ASSETS(path string) {
+	s.handler.ASSETS(path)
+}
+
 func (s *Server) Run() error {
-	// (?): Maybe log it only when logger is enabled
-	log.Printf("🔨 Server started on port %s\n", s.listenAddr[1:])
+	routes := s.handler.Router.Iterate()
+
+	for _, route := range routes {
+		fmt.Printf("[%s %s]\n", route.Method, route.Path)
+	}
+
+	fmt.Printf("[🔨 Server started on port %s]\n", s.listenAddr[1:])
 	return http.ListenAndServe(s.listenAddr, s.server.Handler)
 }
 
@@ -146,7 +164,6 @@ func (c *Context) WriteFile(code int, content []byte, fileType FileType) {
 	case FormDataFileType:
 		c.Response.Header().Set("Content-Type", "multipart/form-data")
 	}
-
 	hashedContent := util.HashValue(content)
 
 	c.Response.Header().Set("Cache-Control", "max-age=3600")

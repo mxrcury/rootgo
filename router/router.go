@@ -2,12 +2,15 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
+	"path"
 	"slices"
 	"strings"
+
+	"github.com/mxrcury/rootgo/util"
 )
 
 type IHandler interface {
@@ -20,19 +23,20 @@ type IHandler interface {
 	DELETE(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request))
 }
 
-type Handler struct {
-	Router *Router
-
-	logger *log.Logger
-}
-
 type (
+	Handler struct {
+		Router *Router
+	}
+
 	Router struct {
 		node *Node
+
+		assets *Assets
 	}
 
 	Node struct {
-		Path string
+		Path     string
+		FullPath string
 
 		Handlers map[string]func(*Context, http.ResponseWriter, *http.Request)
 		Children map[string]*Node
@@ -51,13 +55,18 @@ type (
 	Body struct {
 		BodyDecoder *json.Decoder
 	}
+
+	Assets struct {
+		Path string
+	}
 )
 
-func NewRouter(path string) *Handler {
+func NewRouter(prefix string) *Handler {
 	return &Handler{
 		Router: &Router{
 			node: &Node{
-				Path:     path,
+				Path:     prefix,
+				FullPath: prefix,
 				Handlers: make(map[string]func(*Context, http.ResponseWriter, *http.Request)),
 				Children: make(map[string]*Node),
 			},
@@ -108,6 +117,7 @@ func (r *Router) Add(method, path string, handler func(*Context, http.ResponseWr
 	}
 	explodedPath := explodePath(path)
 	node := r.node
+	prefix := node.Path
 	for index, path := range explodedPath {
 		isLastElement := index == len(explodedPath)-1
 		if node.Children == nil {
@@ -118,7 +128,8 @@ func (r *Router) Add(method, path string, handler func(*Context, http.ResponseWr
 		}
 		if node.Children[path] == nil {
 			node.Children[path] = &Node{
-				Path: path,
+				Path:     path,
+				FullPath: fmt.Sprintf("%s/%s", prefix, strings.Join(explodedPath, "/")),
 			}
 			node = node.Children[path]
 		} else {
@@ -187,6 +198,41 @@ func (r *Router) search(method, path string) (func(*Context, http.ResponseWriter
 	return nil, nil
 }
 
+type Route struct {
+	Method string
+	Path   string
+}
+
+func iterate(list *[]*Route, node *Node) {
+	if len(node.Children) != 0 {
+		if len(node.Handlers) != 0 {
+			for h := range node.Handlers {
+				route := &Route{Method: h, Path: node.FullPath}
+				*list = append(*list, route)
+			}
+		}
+		for c := range node.Children {
+			iterate(list, node.Children[c])
+		}
+
+	} else {
+		for h := range node.Handlers {
+			route := &Route{Method: h, Path: node.FullPath}
+			*list = append(*list, route)
+		}
+	}
+	return
+}
+
+func (r *Router) Iterate() []*Route {
+	routes := []*Route{}
+	node := r.node
+
+	iterate(&routes, node)
+
+	return routes
+}
+
 func explodePath(path string) []string {
 	explodedPath := make([]string, 0, 6)
 	splitPath := strings.Split(path, "/")
@@ -202,17 +248,28 @@ func explodePath(path string) []string {
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler, params := h.Router.search(r.Method, r.URL.Path)
 
-	if h.logger != nil {
-		h.logger.Printf("[%s] %s\n", r.Method, r.URL.Path)
-	}
-
 	if handler != nil {
 		ctx := newContext(params)
 		ctx.NewBodyDecoder(r.Body)
 		handler(ctx, w, r)
-	} else {
-		io.WriteString(w, "404 not found page")
+		return
 	}
+
+	areAssetsEnabled := h.Router.assets != nil && strings.TrimSpace(h.Router.assets.Path) != ""
+	if areAssetsEnabled && strings.HasPrefix(r.URL.Path, h.Router.assets.Path) || strings.HasPrefix(strings.ReplaceAll(r.URL.Path, "/", ""), strings.ReplaceAll(h.Router.assets.Path, "/", "")) {
+
+		assetsPath := path.Join(strings.Split(r.URL.Path, "/")...)
+
+		file, err := os.ReadFile(assetsPath)
+		if err != nil {
+			json.NewEncoder(w).Encode(util.NewError("file not found", 404))
+			return
+		}
+
+		w.Write(file)
+		return
+	}
+	json.NewEncoder(w).Encode(util.NewError("not found", 404))
 }
 
 func (h *Handler) GET(path string, handler func(ctx *Context, w http.ResponseWriter, r *http.Request)) {
@@ -235,8 +292,8 @@ func (h *Handler) DELETE(path string, handler func(ctx *Context, w http.Response
 	h.Router.Add("DELETE", path, handler)
 }
 
-func (h *Handler) Logger() {
-	h.logger = log.New(os.Stdout, "test", log.Flags())
+func (h *Handler) ASSETS(path string) {
+	h.Router.assets = &Assets{Path: path}
 }
 
 func (p *Params) set(key, value string) {

@@ -1,1 +1,1 @@
-alert("You are hacked!!!")
+console.log("test")

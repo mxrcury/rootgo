@@ -22,18 +22,11 @@ Simple and lightweight HTTP router/server for Golang
 - Routes with params
 - Getting value of params, several params with the same name presented as slice
 - Router can be used both with standard library and our server wrapper
-- Server wrapper that implements some high level utils
+- Server wrapper that implements some high level utils(Write, WriteFiles)
+- Working with views
 
 ### Coming features
-- [Server] Add support not only body JSON type but some other content types as well and add header "Content-length" as response (needs testing method 'WriteFile' and caching inside of it)
-- [Serer/Router] Built in logger of requests and response(check if possible?)
-- [Server] Maybe something like middleware
-- [Server] Working with views, like html, css, js etc.
-- [Server] Add logs of all routes that are connected after running application(like in Nest)
 - [Server] Implement caching(in memory and in redis or any other db that implement Cache interface in `/caching/cache.go`) 
-- [Router/Server] Grouping several routes
-- [Server] Add a feature to add customer error handler that catch different errors
-
 
 ### Usage example
 
@@ -43,16 +36,33 @@ func main(){
 
 	server := api.NewServer(r, api.Options{Port: "8000"})
 
+	server.ASSETS("/assets")
+
 	server.GET("/users/contacts/:id", func(ctx *api.Context) {
 		ids := ctx.Params.Get("id")
 		ctx.WriteJSON("GET id:"+id[0], 200)
 	})
 
-	server.POST("/users/contacts", func(ctx *api.Context) {
-		body := new(User)
-		ctx.Body.Decode(body)
+	server.POST("/users", func(ctx *api.Context) {
+		user := new(User)
+		err := ctx.Body.Decode(user)
 
-		ctx.WriteJSON("Successfully created", 201)
+		if err != nil {
+			ctx.WriteError(types.Error{Message: "You entered wrong values", Status: 400})
+		}
+
+		if err := ctx.Write(user, 200); err != nil {
+			ctx.WriteError(types.Error{Message: "Internal server error", Status: 500})
+		}
+	})
+
+	server.GET("/document", func(ctx *api.Context) {
+		file, err := os.ReadFile("./assets/doc.pdf")
+		if err != nil {
+			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
+		}
+
+		ctx.WriteFile(200, file, api.PDFFileType)
 	})
 
 	server.Run()
