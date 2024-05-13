@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/mxrcury/rootgo/api"
-	"github.com/mxrcury/rootgo/config"
 	"github.com/mxrcury/rootgo/router"
 	"github.com/mxrcury/rootgo/types"
 )
@@ -20,14 +19,11 @@ type User struct {
 }
 
 func main() {
-	cfg, err := config.Init()
-	if err != nil {
-		log.Fatalf("error: %s\n", err)
-	}
+  const port = "5000"
 
 	r := router.NewRouter(_prefix)
 
-	server := api.NewServer(r, api.Options{Port: cfg.Http.Port})
+	server := api.NewServer(r, api.Options{Port: port})
 
 	server.ASSETS("assets")
 
