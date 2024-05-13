@@ -1,12 +1,13 @@
-package examples
+package main
 
 import (
 	"fmt"
-	"log"
+	"io"
+	"net/http"
 	"os"
 
-	"github.com/mxrcury/rootgo/api"
-	"github.com/mxrcury/rootgo/router"
+	"github.com/mxrcury/rootgo/pkg/api"
+	"github.com/mxrcury/rootgo/pkg/router"
 	"github.com/mxrcury/rootgo/types"
 )
 
@@ -27,6 +28,10 @@ func main() {
 
 	server.ASSETS("assets")
 
+  r.GET("/users/lol/kek/", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+    io.WriteString(w, "success")
+  })
+
 	server.GET("/users/:id", func(ctx *api.Context) {
 		ids := ctx.Params.Get("id")
 		ctx.Write(fmt.Sprintf("<h1>Your user's ID is [%s]</h1><p>You IP is %s</p><b>Magic text: %s</b>\n", ids[0], ctx.Request.RemoteAddr, ctx.Request.URL.Query().Get("msg")), 200)
@@ -45,7 +50,7 @@ func main() {
 		}
 	})
 
-	server.GET("/ok", func(ctx *api.Context) {
+	server.GET("/home", func(ctx *api.Context) {
 		file, err := os.ReadFile("./assets/index.html")
 		if err != nil {
 			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
@@ -53,22 +58,13 @@ func main() {
 		ctx.WriteFile(200, file, api.HTMLFileType)
 	})
 
-	server.GET("/script.js", func(ctx *api.Context) {
+	server.GET("/script", func(ctx *api.Context) {
 		file, err := os.ReadFile("./assets/script.js")
 		if err != nil {
 			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
 		}
 
 		ctx.WriteFile(200, file, api.JSFileType)
-	})
-
-	server.GET("/document", func(ctx *api.Context) {
-		file, err := os.ReadFile("./assets/doc.pdf")
-		if err != nil {
-			ctx.WriteError(types.Error{Message: err.Error(), Status: 500})
-		}
-
-		ctx.WriteFile(200, file, api.PDFFileType)
 	})
 
 	server.Run()

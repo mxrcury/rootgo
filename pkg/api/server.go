@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mxrcury/rootgo/router"
+	"github.com/mxrcury/rootgo/pkg/router"
 	"github.com/mxrcury/rootgo/types"
 	"github.com/mxrcury/rootgo/util"
 )
