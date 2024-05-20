@@ -1,6 +1,6 @@
 package types
 
 type Error struct {
-	Message string
-	Status  int
+	Message string `json:"message"`
+	Status  int    `json:"status"`
 }

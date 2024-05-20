@@ -20,17 +20,19 @@ type User struct {
 }
 
 func main() {
-  const port = "5000"
+	const port = "5000"
 
 	r := router.NewRouter(_prefix)
 
 	server := api.NewServer(r, api.Options{Port: port})
 
-	server.ASSETS("assets")
+	server.ASSETS("/examples/assets/")
 
-  r.GET("/users/lol/kek/", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
-    io.WriteString(w, "success")
-  })
+	r.GET("/users/lol/kek/:id", func(ctx *router.Context, w http.ResponseWriter, r *http.Request) {
+		id := ctx.Params.Get("id")
+
+		io.WriteString(w, "success"+id[0])
+	})
 
 	server.GET("/users/:id", func(ctx *api.Context) {
 		ids := ctx.Params.Get("id")
